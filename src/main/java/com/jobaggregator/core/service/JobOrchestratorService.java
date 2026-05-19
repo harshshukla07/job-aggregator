@@ -16,7 +16,7 @@ public class JobOrchestratorService {
     private final TelegramNotificationService telegramService;
 
     private static final List<String> TARGET_COMPANIES = List.of(
-            "netflix", "canva", "figma", "palantir", "openai", "lyft", "twitch"
+            "palantir", "coursera", "atlassian", "leverdemo"
     );
 
     public JobOrchestratorService(LeverApiService leverApiService, JobFilterService jobFilterService,
