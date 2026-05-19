@@ -21,6 +21,10 @@ public class JobFilterService {
             "java", "spring boot", "node.js", "express"
     );
 
+    private static final List<String> ALLOWED_LOCATIONS = List.of(
+            "india", "remote", "bengaluru", "bangalore", "chennai", "hyderabad", "pune", "gurugram", "noida", "mumbai"
+    );
+
     private static final Pattern SENIORITY_REGEX = Pattern.compile("(?i)\\b([3-9]|1[0-9])\\+?\\s*years?\\b");
 
     public boolean isPerfectMatch(LeverJobDto job) {
@@ -31,14 +35,27 @@ public class JobFilterService {
         String title = job.text().toLowerCase();
         String description = job.descriptionPlain().toLowerCase();
 
-        boolean hasBlockedTitle = BLOCKED_TITLES.stream().anyMatch(title::contains);
-        if (hasBlockedTitle) return false;
+        if (BLOCKED_TITLES.stream().anyMatch(title::contains)) return false;
 
-        boolean hasAllowedTitle = ALLOWED_TITLES.stream().anyMatch(title::contains);
-        if (!hasAllowedTitle) return false;
+        if (ALLOWED_TITLES.stream().noneMatch(title::contains)) return false;
 
         if (SENIORITY_REGEX.matcher(description).find()) return false;
 
-        return REQUIRED_SKILLS.stream().anyMatch(description::contains);
+        if (REQUIRED_SKILLS.stream().noneMatch(description::contains)) return false;
+
+        return isLocationMatch(job);
+    }
+
+    private boolean isLocationMatch(LeverJobDto job) {
+        if (job.workplaceType() != null && job.workplaceType().toLowerCase().contains("remote")) {
+            return true;
+        }
+
+        if (job.categories() != null && job.categories().location() != null) {
+            String location = job.categories().location().toLowerCase();
+            return ALLOWED_LOCATIONS.stream().anyMatch(location::contains);
+        }
+
+        return false;
     }
 }
