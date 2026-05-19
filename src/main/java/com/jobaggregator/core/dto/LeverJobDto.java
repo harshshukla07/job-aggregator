@@ -8,12 +8,13 @@ public record LeverJobDto(
         String text,
         String hostedUrl,
         String descriptionPlain,
+        String workplaceType,
         Categories categories
 ) {
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Categories(
             String commitment,
-            String team
+            String team,
+            String location
     ) {}
 }
