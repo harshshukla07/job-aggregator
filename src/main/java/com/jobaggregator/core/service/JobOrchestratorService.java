@@ -21,7 +21,8 @@ public class JobOrchestratorService {
     private static final Map<String, String> COMPANY_DIRECTORY = Map.of(
             "palantir", "lever",
             "atlassian", "lever",
-            "leverdemo", "lever"
+            "airbnb", "greenhouse",
+            "reddit", "greenhouse"
     );
 
     public JobOrchestratorService(List<AtsProvider> atsProviders, JobFilterService jobFilterService,
