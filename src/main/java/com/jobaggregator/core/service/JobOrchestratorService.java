@@ -11,39 +11,40 @@ import java.util.Map;
 @Service
 public class JobOrchestratorService {
 
-    // Spring automatically injects LeverApiService (and any future ATS services) here
     private final List<AtsProvider> atsProviders;
     private final JobFilterService jobFilterService;
     private final JobRepository jobRepository;
     private final TelegramNotificationService telegramService;
-
-    // This acts as our temporary directory until we pull it dynamically from a JSON URL
-    private static final Map<String, String> COMPANY_DIRECTORY = Map.of(
-            "palantir", "lever",
-            "atlassian", "lever",
-            "airbnb", "greenhouse",
-            "reddit", "greenhouse"
-    );
+    private final CompanyDirectoryService directoryService;
 
     public JobOrchestratorService(List<AtsProvider> atsProviders, JobFilterService jobFilterService,
-                                  JobRepository jobRepository, TelegramNotificationService telegramService) {
+                                  JobRepository jobRepository, TelegramNotificationService telegramService,
+                                  CompanyDirectoryService directoryService) {
         this.atsProviders = atsProviders;
         this.jobFilterService = jobFilterService;
         this.jobRepository = jobRepository;
         this.telegramService = telegramService;
+        this.directoryService = directoryService;
     }
 
     public void runPipeline() {
         System.out.println("🚀 Starting Multi-ATS Job Aggregation Pipeline...");
 
+        // ADDED: Fetch the directory dynamically from the cloud!
+        Map<String, String> dynamicDirectory = directoryService.fetchDirectory();
+
+        if (dynamicDirectory.isEmpty()) {
+            System.out.println("⚠️ Company directory is empty or failed to load. Aborting pipeline.");
+            return;
+        }
+
         int totalScanned = 0;
         int totalPassed = 0;
 
-        for (Map.Entry<String, String> entry : COMPANY_DIRECTORY.entrySet()) {
+        for (Map.Entry<String, String> entry : dynamicDirectory.entrySet()) {
             String companySlug = entry.getKey();
             String targetAts = entry.getValue();
 
-            // The Strategy Pattern: Find the correct API service based on the target ATS string
             AtsProvider provider = atsProviders.stream()
                     .filter(p -> p.getProviderName().equalsIgnoreCase(targetAts))
                     .findFirst()
@@ -54,7 +55,6 @@ public class JobOrchestratorService {
                 continue;
             }
 
-            // Fetch using the Universal Interface
             List<StandardJob> jobs = provider.fetchJobs(companySlug);
 
             if (jobs.isEmpty()) continue;
