@@ -1,9 +1,10 @@
 package com.jobaggregator.core.service;
 
-import com.jobaggregator.core.dto.LeverJobDto;
+import com.jobaggregator.core.dto.StandardJob;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import java.util.Map;
 
 @Service
@@ -21,19 +22,21 @@ public class TelegramNotificationService {
         this.webClient = webClientBuilder.build();
     }
 
-    public void sendJobAlert(LeverJobDto job, String companyName) {
+    public void sendJobAlert(StandardJob job) {
         String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
 
         String message = String.format(
                 "🚀 <b>New SDE-1 Alert!</b>\n\n" +
                         "<b>Company:</b> %s\n" +
                         "<b>Role:</b> %s\n" +
-                        "<b>Type:</b> %s\n\n" +
+                        "<b>Location:</b> %s\n" +
+                        "<b>ATS:</b> %s\n\n" +
                         "🔗 <a href=\"%s\">Apply/Referral Link</a>",
-                companyName,
-                job.text(),
-                (job.categories() != null && job.categories().commitment() != null) ? job.categories().commitment() : "Full Time",
-                job.hostedUrl()
+                job.companyName().toUpperCase(),
+                job.title(),
+                job.isRemote() ? "Remote" : job.location(),
+                job.atsProvider().toUpperCase(),
+                job.applyUrl()
         );
 
         Map<String, String> body = Map.of(
@@ -50,7 +53,7 @@ public class TelegramNotificationService {
                     .bodyToMono(String.class)
                     .block();
 
-            System.out.println("Alert sent to Telegram for: " + job.text());
+            System.out.println("Alert sent to Telegram for: " + job.title());
         } catch (Exception e) {
             System.err.println("Failed to send Telegram alert: " + e.getMessage());
         }
